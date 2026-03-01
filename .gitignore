@@ -14,7 +14,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# my check !!!!!!!!!!!!!!!!! було: lib/
+#lib/
 lib64/
 parts/
 sdist/
