@@ -3,8 +3,8 @@ import time
 import webrepl
 
 # ---------- WiFi ----------
-SSID = ""
-PASSWORD = ""
+SSID = "ZYTOBLENERGO"
+PASSWORD = "zhuiko12sdtu"
 
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
