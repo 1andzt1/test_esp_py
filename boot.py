@@ -2,29 +2,52 @@ import network
 import time
 import webrepl
 
-# ---------- WiFi ----------
-SSID = "ZYTOBLENERGO"
-PASSWORD = "zhuiko12sdtu"
 
+# ---------- Wi-Fi конфіг ----------
+PRIMARY_SSID = "ZYTOBLENERGO"
+PRIMARY_PASSWORD = "zhuiko12sdtu"
+
+SECONDARY_SSID = "MyWiFi24"
+SECONDARY_PASSWORD = "LogiUser0"
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
 
-if not wlan.isconnected():
-    print("Connecting to WiFi...")
-    wlan.connect(SSID, PASSWORD)
+# ---------- Підключення до Wi-Fi ----------
+def connect_wifi(ssid, password, timeout=10):
+    print("Connecting to:", ssid)
 
-    timeout = 10
+    # якщо вже підключений — роз'єднати
+    if wlan.isconnected():
+        wlan.disconnect()
+        time.sleep(1)
+
+    wlan.connect(ssid, password)
+
     while timeout > 0:
         if wlan.isconnected():
-            break
-        time.sleep(1)
-        timeout -= 1
+            print("Connected:", wlan.ifconfig()[0])
+            return True
+        else:
+            time.sleep(1)
+            timeout -= 1
 
-if wlan.isconnected():
-    print("Connected!")
-    print("IP:", wlan.ifconfig()[0])
-else:
-    print("WiFi connection failed")
+        print(f"Not connected: {PRIMARY_SSID} and {SECONDARY_SSID}")
+        return False
 
-# ---------- WebREPL ----------
-webrepl.start()
+
+
+
+
+if not connect_wifi(PRIMARY_SSID, PRIMARY_PASSWORD):
+    print("Primary failed, trying backup...")
+
+    # пробуємо додаткову wifi
+    connect_wifi(SECONDARY_SSID, SECONDARY_PASSWORD)
+
+
+
+# ---------- Запуск WebREPL ----------
+try:
+    webrepl.start()
+except Exception as e:
+    print("WebREPL error:", e)
