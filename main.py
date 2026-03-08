@@ -4,6 +4,7 @@ import network
 import time
 from lib.bme280_int import BME280
 import ssd1306
+from requests import get
 
 
 # ---------- Wi-Fi конфіг ----------
@@ -11,12 +12,7 @@ LOGIN_WiFi = {
     "ZYTOBLENERGO": "zhuiko12sdtu",
     "MyWiFi24": "LogiUser0",
     }
-
-PRIMARY_SSID = "ZYTOBLENERGO"
-PRIMARY_PASSWORD = "zhuiko12sdtu"
-SECONDARY_SSID = "MyWiFi24"
-SECONDARY_PASSWORD = "LogiUser0"
-
+print(LOGIN_WiFi)
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
 
@@ -30,18 +26,13 @@ def connect_wifi(ssid, password, timeout=10):
     wlan.connect(ssid, password)
 
 for key_ssid, key_password in LOGIN_WiFi.items():
-    if connect_wifi(key_ssid, key_password):
+    connect_wifi(key_ssid, key_password)
+    time.sleep(3)
+    if wlan.isconnected:
+        print("Connected to:", key_ssid)
         break
     else:
-        continue
-
-#connect_wifi(PRIMARY_SSID, PRIMARY_PASSWORD)
-
-if wlan.isconnected():
-    print("Connected to:", PRIMARY_SSID)
-else:
-    print("Failed to connect to primary Wi-Fi.", PRIMARY_SSID)
-
+        print("Failed to connect to Wi-Fi:", key_ssid)
 
 
 # ---------- I2C ----------
@@ -55,15 +46,16 @@ led = PWM(Pin(2))
 led.freq(1000)
 
 
+def get_Local_ip():
+    if wlan.isconnected():
+        return "L:{}".format(wlan.ifconfig()[0])
+    else:
+        return "L:not connection"
 
-def get_ip():
-    try:
-        if wlan.isconnected():
-            return "IP: {}".format(wlan.ifconfig()[0])
-        else:
-            return "IP: no connection"
-    except Exception as e:
-        return "IP: {}".format(e)
+def get_Global_ip():
+    if wlan.isconnected():
+        ip = get('https://api.ipify.org').content.decode('utf8')
+        return "G:{}".format(ip)
 
 # ---------- BME280 ----------
 try:
@@ -97,8 +89,9 @@ while True:
     oled.fill(0)
 
     # --- IP рядок ---
-    oled.text(get_ip(), 0, 0)
-    oled.text("-" *10, 0, 8)
+
+    oled.text(get_Local_ip(), 0, 0)
+    oled.text(get_Global_ip(), 0, 9)
 
     # --- BME280 ---
     if sensor_ok:
@@ -109,10 +102,10 @@ while True:
             press = press / 25600    # hPa
             hum = hum / 1024         # %
 
-            oled.text("T: {:.1f} C".format(temp), 0, 16)
+            oled.text("T: {:.1f} C".format(temp), 0, 38)
 
-            oled.text("P: {:.1f} hPa".format(press), 0, 32)
-            oled.text("H: {:.1f} %".format(hum), 0, 48)
+            oled.text("P: {:.1f} hPa".format(press), 0, 47)
+            oled.text("H: {:.1f} %".format(hum), 0, 56)
 
         except Exception as e:
             oled.text("Sensor read err", 0, 24)
